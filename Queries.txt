@@ -1,0 +1,195 @@
+MongoDB Task
+
+Design database for Zen class programme
+users
+codekata
+attendance
+topics
+tasks
+company_drives
+mentors
+
+1.Find all the topics and tasks which are thought in the month of October
+  Queries:
+        db.topic.aggregate([
+            {
+            $lookup:{
+            from:'task',
+            localField:'topic_id',
+            foreignField:'topic_id',
+            as:'task_info'
+            }
+            },
+            {
+            $match:{
+            topic_date:{$regex:'2023-10'}
+            }
+            },
+            {
+            $unwind:'$task_info'
+            },
+            {
+            $project:{
+            _id:0,
+            topic_name:1,
+            topic_date:1,
+            User_ID:"$task_info.user_id",
+            Task_Name:"$task_info.task_name",
+            Submission_Date:"$task_info.submisson_date",
+            Submission_Time:"$task_info.submission_time",
+            Submission_Status:"$task_info.submission_status",
+            }
+            }
+            ]
+            ).toArray();  
+   ------------------------------->xxxxxx<---------------------
+
+2.Find all the company drives which appeared between 15 oct-2020 and 31-oct-2020
+  Queries:
+                    db.company.find({
+                   drive_date: {
+                    $gte: '15-10-2024',
+                    $lte: '31-10-2024'
+                }
+                });
+    ------------------------------->xxxxxx<--------------------- 
+
+3.Find all the company drives and students who are appeared for the placement.
+ Queries:
+       db.company.aggregate([
+            {$lookup:{
+            from:'user',
+            localField:'user_id',
+            foreignField:'user_id',
+            as:'Companydrives'}},
+            {$unwind:'$Companydrives'},
+            {$project:{
+            _id:0,
+            company_id:1,
+            company_name:1,
+            drive_date:1,
+            user_id:'$Companydrives.user_id',
+            user_name:'$Companydrives.username',
+            user_Email:'$Companydrives.useremail'
+            }}
+            ]).toArray();
+
+    ------------------------------->xxxxxx<---------------------
+
+4.Find the number of problems solved by the user in codekata
+ Queries:
+              
+              db.codekata.aggregate([
+                    {
+                    $lookup:{
+                    from:'user',
+                    localField:'user_id',
+                    foreignField:'user_id',
+                    as:'ProblemSolved'
+                    }
+                    },
+                    {$unwind:'$ProblemSolved'},
+                    {
+                    $project:{
+                    _id:0,
+                    code_id:1,
+                    user_name:'$ProblemSolved.username',
+                    useremail:'$ProblemSolved.useremail',
+                    user_id:'$ProblemSolved.user_id',
+                    Total_Problem_solved:1
+                    }
+                    }
+]).toArray();
+
+    ------------------------------->xxxxxx<---------------------
+5.Find all the mentors with who has the mentee's count more than 15
+    Queries:
+        db.mentors.aggregate([
+                {
+                $lookup:{
+                from:'users',
+                localField:'mentor_id',
+                foreignField:'mentorid',
+                as:'Mentee_Count'
+                }
+                },
+                {
+                $project:{count:{$size:'$Mentee_Count'},
+                _id:0,
+                mentor_name:1,
+                mentor_id:1
+                }
+                },
+                {
+                $match:{count:{$gt:15}}
+                }
+                ]
+                );
+
+
+     ------------------------------->xxxxxx<---------------------
+
+6.Find the number of users who are absent and task is not submitted  between 15 oct-2020 and 31-oct-2020
+    Queries:
+    
+                db.attendence.aggregate([
+                {
+                $lookup:{
+                from:'topic',
+                localField:'topic_id',
+                foreignField:'topic_id',
+                as:'topics'
+                }
+                },
+                {
+                $lookup: {
+                from: 'task',
+                localField: 'user_id',
+                foreignField: 'user_id',
+                as: 'task-info'
+                }
+                },
+                {
+                $unwind:'$topics'
+                },
+                {
+                $unwind:'$task-info'
+                },
+                {
+                $match: {
+                attendence_status: 'false',
+                'topics.topic_date': {
+                $gte: '2023-10-15',
+                $lte: '2023-10-31'
+                }
+
+
+                }
+                },
+                {
+                $match: {
+                'task-info.submisson_date': {
+                $gte: '2023-10-15',
+                $lte: '2023-10-31'
+                },
+                'task-info.submission_status': 'false'
+                }
+                },
+                {
+                $project:{
+                _id:0,
+                user_id:1,
+
+                attendence_status:1,
+                Topic_id:"$topics.topic_id",
+                Topic_Name:"$topics.topic_name",
+                Topic_date:"$topics.topic_date",
+                Task_id:"$task-info.task_id",
+                Task_name:"$task-info.task_name",
+                Task_submission_status:"$task-info.submission_status"
+
+                }
+                }
+                ]).toArray();
+
+      ------------------------------->xxxxxx<---------------------
